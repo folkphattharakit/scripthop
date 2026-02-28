@@ -47,7 +47,7 @@ end
 -- [ ⏰ ระบบนับเวลา Hop: สุ่มช่วงเวลาให้นานขึ้นเพื่อให้ไอดีเจนดูเหมือนคนเล่นจริง ]
 task.spawn(function()
     -- สุ่มเวลา Hop ระหว่าง 45 ถึง 90 นาที (ไม่ให้วาร์ปถี่เกินไป)
-    local randomMinutes = math.random(40, 50) 
+    local randomMinutes = math.random(30, 45) 
     warn("⏰ [Stealth] ระบบ Hop: จะย้ายเซิร์ฟเวอร์ในอีก " .. randomMinutes .. " นาที")
     task.wait(randomMinutes * 60)
     HopServer()
