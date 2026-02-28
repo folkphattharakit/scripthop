@@ -90,7 +90,7 @@ task.spawn(function()
                 end
             end
         end)
-        task.wait(2) 
+        task.wait(4) 
         if not IsLoading then break end
     end
 end)
@@ -103,12 +103,12 @@ task.spawn(function()
         root.Anchored = true 
         warn("✅ [Stealth] ตัวละครเกิดแล้ว!")
         task.spawn(function()
-            task.wait(30) 
+            task.wait(45) 
             IsLoading = false 
             warn("🛑 [Stealth] หยุดระบบกดปุ่มแล้ว")
         end)
         warn("⏳ [Stealth] ล็อคขาป้องกันการตรวจจับ 60 วิ...")
-        task.wait(60) 
+        task.wait(120) 
         if root then root.Anchored = false end
         warn("🚀 [Stealth] เริ่มรันสคริปต์หลัก!")
         -- รันสคริปต์หลักของคุณ
