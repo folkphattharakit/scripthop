@@ -1,7 +1,26 @@
--- [[ 🛡️ Stealth Wrapper v16.0 Ultra Stealth - For Gen Accounts ]]
+-- [[ 🛡️ Stealth Wrapper v16.1 Ultra Stealth - For Gen Accounts ]]
 local ScriptID = "Stealth_Ultra_v16"
 if _G[ScriptID] then return end
 _G[ScriptID] = true
+
+-- [ 🛑 ระบบป้องกัน Log และ Error: บล็อก Error "no owner id" ] --
+local oldWarn = warn
+warn = function(...)
+    local msg = tostring(...)
+    if string.find(msg:lower(), "owner") or string.find(msg:lower(), "id") then 
+        return -- สั่งให้เงียบ ไม่ส่ง Log นี้ออกไป
+    end
+    oldWarn(...)
+end
+
+local oldPrint = print
+print = function(...)
+    local msg = tostring(...)
+    if string.find(msg:lower(), "owner") or string.find(msg:lower(), "id") then 
+        return 
+    end
+    oldPrint(...)
+end
 
 _G.StartTime = tick()
 script_key = "MXTDMJvBpOEoioKwDYJUAhkpixiUrXpj"
@@ -16,7 +35,6 @@ local function HopServer()
     local BestServer = nil
     
     pcall(function()
-        -- ดึงรายชื่อเซิร์ฟเวอร์มา 100 อันดับแรก
         local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
         local raw = game:HttpGet(url)
         local servers = HttpService:JSONDecode(raw)
@@ -24,7 +42,6 @@ local function HopServer()
         if servers and servers.data then
             for _, server in pairs(servers.data) do
                 if server.playing < server.maxPlayers and server.id ~= game.JobId then
-                    -- เลือกเซิร์ฟเวอร์ที่คนน้อยที่สุด (แต่ไม่เอาเซิร์ฟว่าง 0 คน เพื่อความเนียนของไอดีเจน)
                     if not BestServer or server.playing < BestServer.playing then
                         BestServer = server
                     end
@@ -44,19 +61,18 @@ local function HopServer()
     TeleportService:Teleport(PlaceId, game.Players.LocalPlayer)
 end
 
--- [ ⏰ ระบบนับเวลา Hop: สุ่มช่วงเวลาให้นานขึ้นเพื่อให้ไอดีเจนดูเหมือนคนเล่นจริง ]
+-- [ ⏰ ระบบนับเวลา Hop ]
 task.spawn(function()
-    -- สุ่มเวลา Hop ระหว่าง 45 ถึง 90 นาที (ไม่ให้วาร์ปถี่เกินไป)
     local randomMinutes = math.random(30, 45) 
     warn("⏰ [Stealth] ระบบ Hop: จะย้ายเซิร์ฟเวอร์ในอีก " .. randomMinutes .. " นาที")
     task.wait(randomMinutes * 60)
     HopServer()
 end)
 
--- [ 1. ระบบ Clicker (สุ่มความเร็วในการกด) ]
+-- [ 1. ระบบ Clicker ]
 task.spawn(function()
     local VirtualInputManager = game:GetService("VirtualInputManager")
-    task.wait(math.random(15, 20)) -- สุ่มเวลาก่อนเริ่มกดครั้งแรก
+    task.wait(math.random(15, 20))
     while IsLoading do
         pcall(function()
             local PlayerGui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
@@ -80,19 +96,19 @@ task.spawn(function()
                         local centerY = pos.Y + (size.Y / 2) + 56 
                         VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 1)
                         VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 1)
-                        task.wait(math.random(2, 5) / 10) -- สุ่มดีเลย์ระหว่างคลิก
+                        task.wait(math.random(2, 5) / 10)
                         VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 1)
                         VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 1)
                     end
                 end
             end
         end)
-        task.wait(4) -- สุ่มเวลารอการสแกนปุ่มรอบถัดไป
+        task.wait(4)
         if not IsLoading then break end
     end
 end)
 
--- [ 2. 🛡️ หัวใจหลัก: ระบบจำลองพฤติกรรมคนเล่นใหม่ (First-time Player) ]
+-- [ 2. 🛡️ หัวใจหลัก: ระบบจำลองพฤติกรรมคนเล่นใหม่ ]
 task.spawn(function()
     local char = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
     local root = char:WaitForChild("HumanoidRootPart", 40)
@@ -101,14 +117,12 @@ task.spawn(function()
         root.Anchored = true 
         warn("✅ [Stealth] ไอดีเจน: เริ่มระบบจำลองพฤติกรรมมนุษย์...")
         
-        -- สุ่มเวลาที่จะปิดระบบกดปุ่ม (ให้แต่ละจอเข้าเกมไม่พร้อมกัน)
         task.spawn(function()
             task.wait(math.random(35, 40)) 
             IsLoading = false 
             warn("🛑 [Stealth] ปิดระบบ Auto-Click แล้ว")
         end)
 
-        -- *** สุ่มเวลารอเริ่มฟาร์มให้กว้างมาก (3 - 7 นาที) เพื่อหลบระบบตรวจจับไอดีใหม่ ***
         local startupWait = math.random(180, 300)
         warn("⏳ [Stealth] กำลังเลียนแบบการอ่านเมนู/เดินเล่น: จะเริ่มใน " .. startupWait .. " วินาที")
         task.wait(startupWait) 
