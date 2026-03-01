@@ -1,32 +1,30 @@
--- [[ 🛡️ Stealth Wrapper v16.1 Ultra Stealth - For Gen Accounts ]]
-local ScriptID = "Stealth_Ultra_v16"
+-- [[ 🛡️ Stealth Wrapper v16.5 - Full Integrated Edition ]]
+local ScriptID = "Stealth_Ultra_v16_5"
 if _G[ScriptID] then return end
 _G[ScriptID] = true
 
--- [ 🛑 ระบบป้องกัน Log และ Error: บล็อก Error "no owner id" ] --
+-- [ 🛑 ส่วนที่ 1: ปิดปาก Error "no owner id" ]
 local oldWarn = warn
 warn = function(...)
     local msg = tostring(...)
-    if string.find(msg:lower(), "owner") or string.find(msg:lower(), "id") then 
-        return -- สั่งให้เงียบ ไม่ส่ง Log นี้ออกไป
-    end
+    if string.find(msg:lower(), "owner") or string.find(msg:lower(), "id") then return end
     oldWarn(...)
 end
 
 local oldPrint = print
 print = function(...)
     local msg = tostring(...)
-    if string.find(msg:lower(), "owner") or string.find(msg:lower(), "id") then 
-        return 
-    end
+    if string.find(msg:lower(), "owner") or string.find(msg:lower(), "id") then return end
     oldPrint(...)
 end
 
 _G.StartTime = tick()
 script_key = "MXTDMJvBpOEoioKwDYJUAhkpixiUrXpj"
 local IsLoading = true 
+local Player = game.Players.LocalPlayer
+local FileName = "Status_" .. Player.Name .. ".txt"
 
--- [ ฟังก์ชันสำหรับการ Hop แบบหาเซิร์ฟคนน้อยที่สุด + กัน Error ]
+-- [ 🚀 ฟังก์ชันสำหรับการ Hop (ของคุณเดิมเป๊ะ) ]
 local function HopServer()
     warn("🚀 [Stealth] กำลังค้นหาเซิร์ฟเวอร์คนน้อย (เน้นเนียน)...")
     local HttpService = game:GetService("HttpService")
@@ -51,31 +49,32 @@ local function HopServer()
         
         if BestServer then
             warn("📍 พบเป้าหมาย: " .. BestServer.playing .. " คน | กำลังวาร์ป...")
-            TeleportService:TeleportToPlaceInstance(PlaceId, BestServer.id, game.Players.LocalPlayer)
+            TeleportService:TeleportToPlaceInstance(PlaceId, BestServer.id, Player)
         else
-            TeleportService:Teleport(PlaceId, game.Players.LocalPlayer)
+            TeleportService:Teleport(PlaceId, Player)
         end
     end)
-    
     task.wait(10)
-    TeleportService:Teleport(PlaceId, game.Players.LocalPlayer)
+    TeleportService:Teleport(PlaceId, Player)
 end
 
--- [ ⏰ ระบบนับเวลา Hop ]
-task.spawn(function()
-    local randomMinutes = math.random(30, 45) 
-    warn("⏰ [Stealth] ระบบ Hop: จะย้ายเซิร์ฟเวอร์ในอีก " .. randomMinutes .. " นาที")
-    task.wait(randomMinutes * 60)
-    HopServer()
-end)
+-- [ ⏰ ระบบนับเวลา Hop (ทำงานเฉพาะตอนฟาร์มจริง) ]
+local function StartHopTimer()
+    task.spawn(function()
+        local randomMinutes = math.random(35, 50) 
+        warn("⏰ [Stealth] ระบบ Hop: จะย้ายเซิร์ฟเวอร์ในอีก " .. randomMinutes .. " นาที")
+        task.wait(randomMinutes * 60)
+        HopServer()
+    end)
+end
 
--- [ 1. ระบบ Clicker ]
+-- [ 1. ระบบ Clicker (ของคุณเดิมเป๊ะ) ]
 task.spawn(function()
     local VirtualInputManager = game:GetService("VirtualInputManager")
     task.wait(math.random(15, 20))
     while IsLoading do
         pcall(function()
-            local PlayerGui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+            local PlayerGui = Player:FindFirstChild("PlayerGui")
             if not PlayerGui then return end
             local targets = {"PLAY", "NEXT", "CONFIRM", "OK", "ตกลง", "เล่น", "ถัดไป", "SKIP", "START", "X", "CLOSE", "ดำเนินต่อ", "ข้าม"}
             for _, v in pairs(PlayerGui:GetDescendants()) do
@@ -90,13 +89,11 @@ task.spawn(function()
                         end
                     end
                     if shouldClick then
-                        local pos = v.AbsolutePosition
-                        local size = v.AbsoluteSize
-                        local centerX = pos.X + (size.X / 2)
-                        local centerY = pos.Y + (size.Y / 2) + 56 
+                        local pos, size = v.AbsolutePosition, v.AbsoluteSize
+                        local centerX, centerY = pos.X + (size.X / 2), pos.Y + (size.Y / 2) + 56 
                         VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 1)
                         VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 1)
-                        task.wait(math.random(2, 5) / 10)
+                        task.wait(0.3)
                         VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 1)
                         VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 1)
                     end
@@ -104,33 +101,44 @@ task.spawn(function()
             end
         end)
         task.wait(4)
-        if not IsLoading then break end
     end
 end)
 
--- [ 2. 🛡️ หัวใจหลัก: ระบบจำลองพฤติกรรมคนเล่นใหม่ ]
+-- [ 2. 🛡️ หัวใจหลัก: ระบบจำลองพฤติกรรม + เช็คไฟล์ ]
 task.spawn(function()
-    local char = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
+    local char = Player.Character or Player.CharacterAdded:Wait()
     local root = char:WaitForChild("HumanoidRootPart", 40)
     
     if root then 
         root.Anchored = true 
-        warn("✅ [Stealth] ไอดีเจน: เริ่มระบบจำลองพฤติกรรมมนุษย์...")
         
-        task.spawn(function()
-            task.wait(math.random(35, 40)) 
-            IsLoading = false 
-            warn("🛑 [Stealth] ปิดระบบ Auto-Click แล้ว")
-        end)
+        -- เช็คสถานะการแช่ไอดี
+        if not isfile(FileName) then
+            -- [[ โหมดแช่ไอดีใหม่ 30 นาที ]]
+            warn("🆕 [Stealth] ไอดีใหม่: เริ่มระบบสะสม Playtime 30 นาที (ห้ามปิด)...")
+            task.wait(1800) 
+            writefile(FileName, "Ready")
+            warn("✅ [Stealth] แช่เสร็จแล้ว! กำลังปิดเกมเพื่อให้ระบบบันทึกค่า...")
+            task.wait(2)
+            game:Shutdown()
+        else
+            -- [[ โหมดฟาร์มจริง (สำหรับไอดีที่แช่แล้ว) ]]
+            warn("✅ [Stealth] ไอดีพร้อมฟาร์ม: เริ่มระบบพรางตัว...")
+            
+            task.spawn(function()
+                task.wait(math.random(35, 40)) 
+                IsLoading = false 
+                warn("🛑 [Stealth] ปิดระบบ Auto-Click แล้ว")
+            end)
 
-        local startupWait = math.random(180, 300)
-        warn("⏳ [Stealth] กำลังเลียนแบบการอ่านเมนู/เดินเล่น: จะเริ่มใน " .. startupWait .. " วินาที")
-        task.wait(startupWait) 
+            local startupWait = math.random(300, 900) -- สุ่มรอ 5-15 นาทีเพื่อกระจายความเสี่ยง
+            warn("⏳ [Stealth] จะเริ่มรันสคริปต์ฟาร์มใน " .. startupWait .. " วินาที")
+            task.wait(startupWait) 
 
-        if root then root.Anchored = false end
-        warn("🚀 [Stealth] ปลอดภัยแล้ว! เริ่มรันสคริปต์หลัก")
-        
-        -- รันสคริปต์หลัก (Achitsak)
-        loadstring(game:HttpGet('https://api.luarmor.net/files/v3/loaders/50cc49ea3e0a5a40cd1fb5545dc938b6.lua'))()
+            if root then root.Anchored = false end
+            warn("🚀 [Stealth] เริ่มรันสคริปต์หลัก (Achitsak)")
+            StartHopTimer() -- เริ่มนับเวลา Hop เฉพาะตอนเริ่มฟาร์ม
+            loadstring(game:HttpGet('https://api.luarmor.net/files/v3/loaders/50cc49ea3e0a5a40cd1fb5545dc938b6.lua'))()
+        end
     end
 end)
