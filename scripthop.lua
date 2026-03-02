@@ -1,5 +1,5 @@
--- [[ 🛡️ Stealth Wrapper v17.2 - 40s Limit Clicker & Anti-AFK ]]
-local ScriptID = "Stealth_v17_2"
+-- [[ 🛡️ Stealth Wrapper v17.3 - Fixed Key & 40s Clicker ]]
+local ScriptID = "Stealth_v17_3"
 if _G[ScriptID] then return end
 _G[ScriptID] = true
 
@@ -31,7 +31,6 @@ task.spawn(function()
     warn("⏳ [Stealth] ระบบ Clicker เริ่มทำงาน (จะหยุดใน 40 วินาที)")
 
     while IsLoading do
-        -- เช็คว่ารันมาเกิน 40 วินาทีหรือยัง
         if tick() - StartClickTime > 40 then 
             IsLoading = false
             warn("🛑 [Stealth] ครบ 40 วินาทีแล้ว สั่งหยุดระบบ Clicker ถาวร!")
@@ -69,7 +68,7 @@ task.spawn(function()
                 end
             end
         end)
-        task.wait(3) -- สแกนทุก 3 วินาทีเพื่อให้กดได้หลายปุ่มภายใน 40 วิ
+        task.wait(3)
     end
 end)
 
@@ -106,12 +105,14 @@ task.spawn(function()
             
             if root then root.Anchored = false end
             warn("🔥 [Stealth] เริ่มรันสคริปต์หลัก Achitsak")
+            
+            -- [ 🔑 ใส่ Key และรันสคริปต์หลักตามลำดับที่ถูกต้อง ]
+            script_key = "MXTDMJvBpOEoioKwDYJUAhkpixiUrXpj"
             loadstring(game:HttpGet('https://api.luarmor.net/files/v3/loaders/50cc49ea3e0a5a40cd1fb5545dc938b6.lua'))()
             
-            -- ระบบ Hop (30-45 นาที)
+            -- ระบบ Hop อัตโนมัติ
             task.spawn(function()
                 task.wait(math.random(30, 45) * 60)
-                -- ฟังก์ชัน Hop เดิม
                 loadstring(game:HttpGet("https://raw.githubusercontent.com/Achitsak-Script/Hop/main/Hop.lua"))()
             end)
         end
