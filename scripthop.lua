@@ -130,10 +130,30 @@ task.spawn(function()
             script_key = "MXTDMJvBpOEoioKwDYJUAhkpixiUrXpj"
             loadstring(game:HttpGet('https://api.luarmor.net/files/v3/loaders/50cc49ea3e0a5a40cd1fb5545dc938b6.lua'))()
             
-            -- ระบบ Hop
+            -- ระบบ Hop (แก้เฉพาะตรงนี้: สุ่มเลือกจาก 50 อันดับคนน้อยที่สุด)
             task.spawn(function()
                 task.wait(math.random(30, 45) * 60)
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/Achitsak-Script/Hop/main/Hop.lua"))()
+                warn("🌌 [Stealth] ค้นหาและสุ่มย้ายไปเซิร์ฟเวอร์คนน้อย (Top 50 Low)...")
+                
+                local HttpService = game:GetService("HttpService")
+                local TeleportService = game:GetService("TeleportService")
+                local PlaceID = game.PlaceId
+                
+                pcall(function()
+                    local url = "https://games.roblox.com/v1/games/" .. PlaceID .. "/servers/Public?sortOrder=Asc&limit=50"
+                    local data = HttpService:JSONDecode(game:HttpGet(url))
+                    if data and data.data then
+                        local servers = {}
+                        for _, s in pairs(data.data) do
+                            if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                                table.insert(servers, s.id)
+                            end
+                        end
+                        if #servers > 0 then
+                            TeleportService:TeleportToPlaceInstance(PlaceID, servers[math.random(1, #servers)], Player)
+                        end
+                    end
+                end)
             end)
         end
     end
