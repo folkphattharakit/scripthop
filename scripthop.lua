@@ -127,7 +127,7 @@ task.spawn(function()
             if oldForce then oldForce:Destroy() end
             
             -- [ 🔑 รันสคริปต์หลัก Achitsak ]
-            script_key = "MXTDMJvBpOEoioKwDYJUAhkpixiUrXpj"
+            script_key = "dcqwGHfLTHFGcHTZPhrgzZVIPLxMVVMf"
             loadstring(game:HttpGet('https://api.luarmor.net/files/v3/loaders/50cc49ea3e0a5a40cd1fb5545dc938b6.lua'))()
             
             -- ระบบ Hop (แก้เฉพาะตรงนี้: สุ่มเลือกจาก 50 อันดับคนน้อยที่สุด)
