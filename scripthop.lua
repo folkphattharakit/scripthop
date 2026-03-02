@@ -1,5 +1,5 @@
--- [[ 🛡️ Stealth Wrapper v17.9 - Timing Optimized ]]
-local ScriptID = "Stealth_v17_9"
+-- [[ 🛡️ Stealth Wrapper v17.10 - No Flying / Ground Stand ]]
+local ScriptID = "Stealth_v17_10"
 if _G[ScriptID] then return end
 _G[ScriptID] = true
 
@@ -16,37 +16,37 @@ local Player = game.Players.LocalPlayer
 local FileName = "Status_" .. Player.Name .. ".txt"
 local IsLoading = true 
 
--- [ 💤 ระบบกันหลุด Anti-AFK (เฉพาะช่วงแช่) ]
+-- [ 💤 ระบบกันหลุด Anti-AFK (ทำงานเฉพาะช่วงแช่) ]
 local function StartTemporaryAntiAFK()
     AntiAFKActive = true
     task.spawn(function()
-        warn("💤 [Stealth] Anti-AFK เริ่มทำงานเฉพาะช่วงแช่ไอดี...")
+        warn("💤 [Stealth] Anti-AFK (Camera Mode) เริ่มทำงาน...")
         while AntiAFKActive do
-            task.wait(math.random(100, 200))
+            task.wait(math.random(60, 120))
             if not AntiAFKActive then break end
             pcall(function()
                 local camera = workspace.CurrentCamera
-                camera.CFrame = camera.CFrame * CFrame.Angles(0, math.rad(0.01), 0)
+                -- สุ่มขยับมุมกล้องนิดเดียว เหมือนคนขยับเมาส์
+                local offset = math.rad(math.random(-5, 5) / 10)
+                camera.CFrame = camera.CFrame * CFrame.Angles(0, offset, 0)
             end)
         end
     end)
 end
 
--- [ 1. 🎯 ระบบ Clicker (รอ 15 วิ และทำงานถึงวินาทีที่ 45) ]
+-- [ 1. 🎯 ระบบ Clicker (รอ 15 วิ / หยุดที่ 45 วิ / ระบบ 17.3) ]
 task.spawn(function()
     local VirtualInputManager = game:GetService("VirtualInputManager")
     local StartTime = tick()
     
-    warn("⏳ [Stealth] รอ 15 วินาที ก่อนเริ่มระบบ Clicker...")
-    task.wait(15) -- [[ รอ 15 วินาทีก่อนเริ่มตามสั่ง ]]
-    
-    warn("🎯 [Stealth] เริ่มระบบ Clicker 17.3 (จะหยุดที่วินาทีที่ 45)")
+    task.wait(15) -- [[ รอ 15 วินาทีก่อนเริ่ม ]]
+    warn("🎯 [Stealth] เริ่มระบบ Clicker (17.3 Style)")
 
     while IsLoading do
         local currentTime = tick() - StartTime
-        if currentTime > 45 then -- [[ ครบ 45 วินาทีสั่งหยุดถาวร ]]
+        if currentTime > 45 then 
             IsLoading = false
-            warn("🛑 [Stealth] ครบ 45 วินาทีแล้ว สั่งหยุดระบบ Clicker ถาวร!")
+            warn("🛑 [Stealth] ระบบ Clicker หยุดทำงานถาวร!")
             break 
         end
 
@@ -72,7 +72,6 @@ task.spawn(function()
                         local centerX = pos.X + (size.X / 2)
                         local centerY = pos.Y + (size.Y / 2) + 56 
                         
-                        -- Double Click แบบ 17.3
                         VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 1)
                         VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 1)
                         task.wait(0.2)
@@ -86,7 +85,7 @@ task.spawn(function()
     end
 end)
 
--- [ 2. 🛡️ ระบบจัดการไอดี และการแช่ ]
+-- [ 2. 🛡️ ระบบจัดการไอดี และการแช่บนพื้น (Ground Aging) ]
 task.spawn(function()
     local char = Player.Character or Player.CharacterAdded:Wait()
     local root = char:WaitForChild("HumanoidRootPart", 40)
@@ -98,35 +97,40 @@ task.spawn(function()
         end
         
         if not isReady then
+            -- [[ รอบที่ 1: แช่ 30 นาทีบนพื้นปกติ ]]
             StartTemporaryAntiAFK()
             
-            local bp = Instance.new("BodyPosition")
-            bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-            bp.Position = root.Position + Vector3.new(0, 20, 0)
-            bp.Parent = root
+            -- ใส่แรงสั่นเบาๆ ให้ตัวละคร (Micro-movement) กันระบบตรวจจับ Static Character
+            local force = Instance.new("BodyVelocity")
+            force.MaxForce = Vector3.new(50, 0, 50) 
+            force.Velocity = Vector3.new(0, 0, 0)
+            force.Parent = root
             
             local startTime = os.date("%X")
             writefile(FileName, "Started at: " .. startTime)
-            warn("🆕 [Stealth] ไอดีใหม่: เริ่มแช่ 30 นาที...")
+            warn("🆕 [Stealth] แช่ไอดี 30 นาที (บนพื้นปกติ)...")
             
             task.wait(1800)
             
             AntiAFKActive = false
             writefile(FileName, "Ready")
-            warn("✅ [Stealth] แช่เสร็จแล้ว! กำลังปิดเกม...")
+            warn("✅ แช่เสร็จแล้ว! กำลังปิดเกม...")
             task.wait(2)
             game:Shutdown()
         else
-            warn("🚀 [Stealth] พร้อมฟาร์ม: สุ่มรอ (4-8 นาที)...")
+            -- [[ รอบที่ 2: ฟาร์มจริง ]]
+            warn("🚀 [Stealth] Ready: สุ่มรอฟาร์ม (4-8 นาที)...")
             task.wait(math.random(240, 480))
             
-            local oldBp = root:FindFirstChildOfClass("BodyPosition")
-            if oldBp then oldBp:Destroy() end
+            -- ล้างค่าแรงสั่นออกก่อนรันสคริปต์หลัก
+            local oldForce = root:FindFirstChildOfClass("BodyVelocity")
+            if oldForce then oldForce:Destroy() end
             
             -- [ 🔑 รันสคริปต์หลัก Achitsak ]
             script_key = "MXTDMJvBpOEoioKwDYJUAhkpixiUrXpj"
             loadstring(game:HttpGet('https://api.luarmor.net/files/v3/loaders/50cc49ea3e0a5a40cd1fb5545dc938b6.lua'))()
             
+            -- ระบบ Hop
             task.spawn(function()
                 task.wait(math.random(30, 45) * 60)
                 loadstring(game:HttpGet("https://raw.githubusercontent.com/Achitsak-Script/Hop/main/Hop.lua"))()
