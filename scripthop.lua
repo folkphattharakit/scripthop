@@ -1,22 +1,26 @@
--- [[ 🛡️ Stealth Wrapper v17.21 - Fixed 5 Min Wait / No Hop ]]
-local ScriptID = "Stealth_v17_21"
+-- [[ 🛡️ Stealth Wrapper v17.21 - Volt Optimized (Full) ]]
+local ScriptID = "Stealth_v17_21_Full"
 if _G[ScriptID] then return end
 _G[ScriptID] = true
 
--- [ 🛑 ระบบป้องกัน Log ]
+-- [ 🛑 ระบบป้องกัน Log & กรองขยะ Volt ]
 local oldWarn = warn
 warn = function(...)
     local msg = tostring(...)
-    if string.find(msg:lower(), "owner") or string.find(msg:lower(), "id") then return end
+    -- บล็อกขยะจาก Volt เพื่อให้ Console สะอาด
+    if string.find(msg:lower(), "no owner id") or string.find(msg:lower(), "animation") then return end
+    -- ป้องกันข้อมูลส่วนตัวรั่วไหล แต่ยอมให้ [Stealth] แสดงผล
+    if (string.find(msg:lower(), "owner") or string.find(msg:lower(), "id")) and not string.find(msg:lower(), "stealth") then 
+        return 
+    end
     oldWarn(...)
 end
 
 local AntiAFKActive = false
 local Player = game.Players.LocalPlayer
-local FileName = "Status_" .. Player.Name .. ".txt"
 local IsLoading = true 
 
--- [ 💤 ระบบกันหลุด Anti-AFK ]
+-- [ 💤 ระบบกันหลุด Anti-AFK (ฟังก์ชันเดิม) ]
 local function StartTemporaryAntiAFK()
     AntiAFKActive = true
     task.spawn(function()
@@ -33,11 +37,11 @@ local function StartTemporaryAntiAFK()
     end)
 end
 
--- [ 1. 🎯 ระบบ Clicker ]
+-- [ 1. 🎯 ระบบ Clicker (เริ่มทำงานทันที 15-45 วิ) ]
 task.spawn(function()
     local VirtualInputManager = game:GetService("VirtualInputManager")
     local StartTime = tick()
-    task.wait(15)
+    task.wait(15) -- รอ 15 วิให้ UI โหลด
     warn("🎯 [Stealth] เริ่มระบบ Clicker")
 
     while IsLoading do
@@ -83,13 +87,17 @@ end)
 
 -- [ 2. 🛡️ ระบบจัดการไอดี และการแช่บนพื้น ]
 task.spawn(function()
-    local char = Player.Character or Player.CharacterAdded:Wait()
-    local root = char:WaitForChild("HumanoidRootPart", 40)
+    -- [[ 🛑 จุดแก้สำคัญ: รอให้ Player และ Character พร้อมก่อนอ่าน Name ]]
+    repeat task.wait(1) until Player and Player.Parent and Player.Character
+    local FileName = "Status_" .. Player.Name .. ".txt"
+    
+    local char = Player.Character
+    local root = char:WaitForChild("HumanoidRootPart", 60)
     
     if root then
         local isReady = false
         if isfile(FileName) then
-            if readfile(FileName) == "Ready" then isReady = true end
+            if string.find(readfile(FileName), "Ready") then isReady = true end
         end
         
         if not isReady then
@@ -103,7 +111,7 @@ task.spawn(function()
             
             local startTime = os.date("%X")
             writefile(FileName, "Started at: " .. startTime)
-            warn("🆕 [Stealth] แช่ไอดี 30 นาที (บนพื้นปกติ)...")
+            warn("🆕 [Stealth] เริ่มแช่ไอดี 30 นาที (บนพื้นปกติ)...")
             
             task.wait(1800) -- แช่ 30 นาที
             
@@ -111,12 +119,12 @@ task.spawn(function()
             writefile(FileName, "Ready")
             warn("✅ แช่เสร็จแล้ว! กำลังปิดเกมเพื่อรีเซ็ตสถานะ...")
             task.wait(2)
-            game:Shutdown() -- ปิดเกม
+            game:Shutdown() 
         else
-            -- [[ รอบที่ 2: ฟาร์มจริง (เปลี่ยนเป็นรอ 5 นาทีคงที่) ]]
+            -- [[ รอบที่ 2: ฟาร์มจริง ]]
             warn("🚀 [Stealth] Ready: กำลังรอ 5 นาทีก่อนเริ่มฟาร์ม...")
             StartTemporaryAntiAFK() 
-            task.wait(300) -- รอ 5 นาที (300 วินาที)
+            task.wait(300) -- รอ 5 นาที
             
             local oldForce = root:FindFirstChildOfClass("BodyVelocity")
             if oldForce then oldForce:Destroy() end
