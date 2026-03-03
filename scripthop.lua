@@ -13,6 +13,7 @@ end
 
 local AntiAFKActive = false
 local Player = game.Players.LocalPlayer
+local FileName = "Status_" .. Player.Name .. ".txt"
 local IsLoading = true 
 
 -- [ 💤 ระบบกันหลุด Anti-AFK ]
@@ -32,7 +33,7 @@ local function StartTemporaryAntiAFK()
     end)
 end
 
--- [ 1. 🎯 ระบบ Clicker ] -- ส่วนนี้จะทำงานทันทีเพื่อให้กด PLAY เข้าเกมได้
+-- [ 1. 🎯 ระบบ Clicker ]
 task.spawn(function()
     local VirtualInputManager = game:GetService("VirtualInputManager")
     local StartTime = tick()
@@ -82,10 +83,6 @@ end)
 
 -- [ 2. 🛡️ ระบบจัดการไอดี และการแช่บนพื้น ]
 task.spawn(function()
-    -- [[ 🛑 รอให้ข้อมูลพร้อมก่อนอ่าน Player.Name เพื่อไม่ให้สคริปต์ตาย ]]
-    repeat task.wait(1) until Player and Player.Parent
-    local FileName = "Status_" .. tostring(Player.Name) .. ".txt"
-
     local char = Player.Character or Player.CharacterAdded:Wait()
     local root = char:WaitForChild("HumanoidRootPart", 40)
     
