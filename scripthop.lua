@@ -1,4 +1,4 @@
--- [[ 🛡️ Stealth Wrapper v17.21 - Fixed 5 Min Wait / No Hop ]]
+-- [[ 🛡️ Stealth Wrapper v17.21 - AutoClick First Edition ]]
 local ScriptID = "Stealth_v17_21"
 if _G[ScriptID] then return end
 _G[ScriptID] = true
@@ -33,6 +33,7 @@ local function StartTemporaryAntiAFK()
 end
 
 -- [ 1. 🎯 ระบบ Clicker ]
+-- ระบบนี้จะทำงานทันที ไม่มีการรอโหลดชื่อไอดีเด็ดขาด
 task.spawn(function()
     local VirtualInputManager = game:GetService("VirtualInputManager")
     local StartTime = tick()
@@ -82,17 +83,15 @@ end)
 
 -- [ 2. 🛡️ ระบบจัดการไอดี และการแช่บนพื้น ]
 task.spawn(function()
-    -- [[ 🛑 จุดแก้: รอให้ Name โหลดเสร็จก่อน 5 วินาที เพื่อกัน Error :16 ]]
+    -- ย้ายระบบรอโหลด 5 วินาทีมาไว้ในนี้ เพื่อไม่ให้ไปกวน Clicker ข้างบน
     warn("⏳ [Stealth] รอโหลดข้อมูลผู้เล่น (5s Check)...")
     while not (Player and Player.Parent and Player.Name ~= "") do
         task.wait(5) 
     end
     
     local FileName = "Status_" .. Player.Name .. ".txt"
-    warn("✅ [Stealth] ข้อมูลพร้อม: " .. Player.Name)
-
     local char = Player.Character or Player.CharacterAdded:Wait()
-    local root = char:WaitForChild("HumanoidRootPart", 60) -- เพิ่มเวลาเผื่อ Rejoin ช้า
+    local root = char:WaitForChild("HumanoidRootPart", 40)
     
     if root then
         local isReady = false
@@ -101,9 +100,7 @@ task.spawn(function()
         end
         
         if not isReady then
-            -- [[ รอบที่ 1: แช่ 30 นาทีบนพื้นปกติ ]]
             StartTemporaryAntiAFK()
-            
             local force = Instance.new("BodyVelocity")
             force.MaxForce = Vector3.new(50, 0, 50) 
             force.Velocity = Vector3.new(0, 0, 0)
@@ -113,23 +110,21 @@ task.spawn(function()
             writefile(FileName, "Started at: " .. startTime)
             warn("🆕 [Stealth] แช่ไอดี 30 นาที (บนพื้นปกติ)...")
             
-            task.wait(1800) -- แช่ 30 นาที
+            task.wait(1800) 
             
             AntiAFKActive = false
             writefile(FileName, "Ready")
-            warn("✅ แช่เสร็จแล้ว! กำลังปิดเกมเพื่อรีเซ็ตสถานะ...")
+            warn("✅ แช่เสร็จแล้ว! กำลังปิดเกม...")
             task.wait(2)
-            game:Shutdown() -- ปิดเกม
+            game:Shutdown()
         else
-            -- [[ รอบที่ 2: ฟาร์มจริง (รอ 5 นาทีคงที่) ]]
             warn("🚀 [Stealth] Ready: กำลังรอ 5 นาทีก่อนเริ่มฟาร์ม...")
             StartTemporaryAntiAFK() 
-            task.wait(300) -- รอ 5 นาที (300 วินาที)
+            task.wait(300) 
             
             local oldForce = root:FindFirstChildOfClass("BodyVelocity")
             if oldForce then oldForce:Destroy() end
             
-            -- [ 🔑 รันสคริปต์หลัก Achitsak ]
             script_key = "dcqwGHfLTHFGcHTZPhrgzZVIPLxMVVMf"
             loadstring(game:HttpGet('https://api.luarmor.net/files/v3/loaders/50cc49ea3e0a5a40cd1fb5545dc938b6.lua'))()
             warn("💎 [Stealth] สคริปต์หลักทำงานแล้ว!")
