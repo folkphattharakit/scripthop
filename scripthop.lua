@@ -13,7 +13,6 @@ end
 
 local AntiAFKActive = false
 local Player = game.Players.LocalPlayer
-local FileName = "Status_" .. Player.Name .. ".txt"
 local IsLoading = true 
 
 -- [ 💤 ระบบกันหลุด Anti-AFK ]
@@ -83,6 +82,13 @@ end)
 
 -- [ 2. 🛡️ ระบบจัดการไอดี และการแช่บนพื้น ]
 task.spawn(function()
+    -- [[ 🛑 จุดที่เพิ่ม: รอ 5 วินาทีจนกว่า Name จะโหลดเสร็จ เพื่อกัน Crash บรรทัด FileName ]]
+    warn("⏳ [Stealth] รอโหลดข้อมูลผู้เล่น (5s Check)...")
+    while not (Player and Player.Parent and Player.Name ~= "") do
+        task.wait(5) 
+    end
+    
+    local FileName = "Status_" .. Player.Name .. ".txt"
     local char = Player.Character or Player.CharacterAdded:Wait()
     local root = char:WaitForChild("HumanoidRootPart", 40)
     
