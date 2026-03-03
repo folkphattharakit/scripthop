@@ -37,7 +37,7 @@ end
 task.spawn(function()
     local VirtualInputManager = game:GetService("VirtualInputManager")
     local StartTime = tick()
-    task.wait(15)
+    task.wait(20)
     warn("🎯 [Stealth] เริ่มระบบ Clicker")
 
     while IsLoading do
@@ -86,7 +86,7 @@ task.spawn(function()
     -- ย้ายระบบรอโหลด 5 วินาทีมาไว้ในนี้ เพื่อไม่ให้ไปกวน Clicker ข้างบน
     warn("⏳ [Stealth] รอโหลดข้อมูลผู้เล่น (5s Check)...")
     while not (Player and Player.Parent and Player.Name ~= "") do
-        task.wait(5) 
+        task.wait(1) 
     end
     
     local FileName = "Status_" .. Player.Name .. ".txt"
