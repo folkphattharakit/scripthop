@@ -1,8 +1,9 @@
--- [[ 🛡️ Stealth Wrapper v17.21 - Force Click / No Stop Edition ]]
+-- [[ 🛡️ Stealth Wrapper v17.21 - Fixed 5 Min Wait / No Hop ]]
 local ScriptID = "Stealth_v17_21"
 if _G[ScriptID] then return end
 _G[ScriptID] = true
 
+-- [ 🛑 ระบบป้องกัน Log ]
 local oldWarn = warn
 warn = function(...)
     local msg = tostring(...)
@@ -10,96 +11,125 @@ warn = function(...)
     oldWarn(...)
 end
 
+local AntiAFKActive = false
 local Player = game.Players.LocalPlayer
-local IsInGame = false -- ตัวแปรใหม่สำหรับเช็คว่าเข้าถึงตัวเกมจริงๆ หรือยัง
+-- [ ❗ ย้าย FileName ลงไปข้างล่าง เพื่อไม่ให้สคริปต์ตายตอนเริ่ม ]
+local IsLoading = true 
 
--- [ 1. 🎯 ระบบ Clicker - ตัวนี้จะทำงานไม่หยุดจนกว่า IsInGame จะเป็น true ]
+-- [ 💤 ระบบกันหลุด Anti-AFK ]
+local function StartTemporaryAntiAFK()
+    AntiAFKActive = true
+    task.spawn(function()
+        warn("💤 [Stealth] Anti-AFK (Camera Mode) เริ่มทำงาน...")
+        while AntiAFKActive do
+            task.wait(math.random(60, 120))
+            if not AntiAFKActive then break end
+            pcall(function()
+                local camera = workspace.CurrentCamera
+                local offset = math.rad(math.random(-5, 5) / 10)
+                camera.CFrame = camera.CFrame * CFrame.Angles(0, offset, 0)
+            end)
+        end
+    end)
+end
+
+-- [ 1. 🎯 ระบบ Clicker - ใช้สูตรการกดของคุณเป๊ะๆ ]
 task.spawn(function()
     local VirtualInputManager = game:GetService("VirtualInputManager")
-    task.wait(15) 
-    warn("🎯 [Stealth] ระบบ Clicker เริ่มการเฝ้าระวังหน้าจอ...")
+    local StartTime = tick()
+    task.wait(15)
+    warn("🎯 [Stealth] เริ่มระบบ Clicker")
 
-    while not IsInGame do 
+    while IsLoading do
+        local currentTime = tick() - StartTime
+        if currentTime > 45 then 
+            IsLoading = false
+            warn("🛑 [Stealth] ระบบ Clicker หยุดทำงาน!")
+            break 
+        end
+
         pcall(function()
             local PlayerGui = Player:FindFirstChild("PlayerGui")
             if not PlayerGui then return end
-            
-            local targets = {"PLAY", "NEXT", "CONFIRM", "OK", "เล่น", "ตกลง", "ถัดไป", "SKIP", "START"}
+            local targets = {"PLAY", "NEXT", "CONFIRM", "OK", "ตกลง", "เล่น", "ถัดไป", "SKIP", "START", "X", "CLOSE", "ดำเนินต่อ", "ข้าม"}
             for _, v in pairs(PlayerGui:GetDescendants()) do
-                -- เช็คทั้งชื่อปุ่ม, ข้อความในปุ่ม และความโปร่งใส เพื่อให้มั่นใจว่าปุ่มพร้อมกดจริงๆ
                 if (v:IsA("TextButton") or v:IsA("ImageButton")) and v.Visible and v.AbsoluteSize.X > 5 then
                     local btnText = v:IsA("TextButton") and string.upper(v.Text) or ""
                     local btnName = string.upper(v.Name)
                     local shouldClick = false
-                    
                     for _, target in pairs(targets) do
                         if string.find(btnText, target) or string.find(btnName, target) then
                             shouldClick = true
                             break
                         end
                     end
-                    
                     if shouldClick then
                         local pos = v.AbsolutePosition
                         local size = v.AbsoluteSize
                         local centerX = pos.X + (size.X / 2)
-                        local centerY = pos.Y + (size.Y / 2) + 56 -- พิกัดแม่นๆ ของคุณ
-                        
-                        -- สั่งกดย้ำ 2 รอบต่อ 1 ปุ่มเพื่อให้มั่นใจ
+                        local centerY = pos.Y + (size.Y / 2) + 56 
+                        -- [[ 📍 เริ่มสูตรการกดของคุณ ]]
                         VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 1)
-                        task.wait(0.1)
                         VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 1)
-                        warn("⚡ [Stealth] กำลังกดปุ่ม: " .. (btnText ~= "" and btnText or btnName))
+                        task.wait(0.2)
+                        VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, true, game, 1)
+                        VirtualInputManager:SendMouseButtonEvent(centerX, centerY, 0, false, game, 1)
+                        -- [[ 📍 จบสูตรการกดของคุณ ]]
                     end
                 end
             end
         end)
-        task.wait(2) -- วนเช็คทุก 2 วินาที
+        task.wait(3)
     end
-    warn("✅ [Stealth] ตรวจพบตัวละครในเกมแล้ว หยุดระบบ Clicker")
 end)
 
--- [ 2. 🛡️ ระบบจัดการไอดี และการตรวจสอบตัวละคร ]
+-- [ 2. 🛡️ ระบบจัดการไอดี และการแช่บนพื้น ]
 task.spawn(function()
-    -- รอโหลดข้อมูลผู้เล่นกัน Error nil Name
+    -- [[ 🛡️ ด่านตรวจ: รอจนกว่าชื่อจะโหลดเสร็จ สคริปต์จะได้ไม่ตาย ]]
     while not (Player and Player.Parent and Player.Name ~= "") do
-        task.wait(5) 
+        task.wait(5)
     end
-    
     local FileName = "Status_" .. Player.Name .. ".txt"
+    
     local char = Player.Character or Player.CharacterAdded:Wait()
-    local root = char:WaitForChild("HumanoidRootPart", 60)
+    local root = char:WaitForChild("HumanoidRootPart", 40)
     
     if root then
-        IsInGame = true -- เมื่อเจอตัวละคร ให้ส่งสัญญาณหยุดระบบ Clicker
-        
         local isReady = false
         if isfile(FileName) then
             if readfile(FileName) == "Ready" then isReady = true end
         end
         
         if not isReady then
-            -- [ รอบวอร์ม 30 นาที ]
-            local force = Instance.new("BodyVelocity", root)
+            -- [[ รอบที่ 1: แช่ 30 นาทีบนพื้นปกติ ]]
+            StartTemporaryAntiAFK()
+            
+            local force = Instance.new("BodyVelocity")
             force.MaxForce = Vector3.new(50, 0, 50) 
             force.Velocity = Vector3.new(0, 0, 0)
+            force.Parent = root
             
-            writefile(FileName, "Started at: " .. os.date("%X"))
-            warn("🆕 [Stealth] เริ่มวอร์มไอดี 30 นาที...")
-            task.wait(1800) 
+            local startTime = os.date("%X")
+            writefile(FileName, "Started at: " .. startTime)
+            warn("🆕 [Stealth] แช่ไอดี 30 นาที (บนพื้นปกติ)...")
             
+            task.wait(1800) -- แช่ 30 นาที
+            
+            AntiAFKActive = false
             writefile(FileName, "Ready")
-            warn("✅ วอร์มเสร็จแล้ว! กำลังรีเซ็ตไอดี...")
+            warn("✅ แช่เสร็จแล้ว! กำลังปิดเกมเพื่อรีเซ็ตสถานะ...")
             task.wait(2)
-            game:Shutdown()
+            game:Shutdown() -- ปิดเกม
         else
-            -- [ รอบ Ready ]
-            warn("🚀 [Stealth] Ready: กำลังรอ 5 นาทีก่อนเริ่มสคริปต์หลัก...")
-            task.wait(300) 
+            -- [[ รอบที่ 2: ฟาร์มจริง (เปลี่ยนเป็นรอ 5 นาทีคงที่) ]]
+            warn("🚀 [Stealth] Ready: กำลังรอ 5 นาทีก่อนเริ่มฟาร์ม...")
+            StartTemporaryAntiAFK() 
+            task.wait(300) -- รอ 5 นาที (300 วินาที)
             
-            if root:FindFirstChildOfClass("BodyVelocity") then root:FindFirstChildOfClass("BodyVelocity"):Destroy() end
+            local oldForce = root:FindFirstChildOfClass("BodyVelocity")
+            if oldForce then oldForce:Destroy() end
             
-            -- [ 🔑 รันสคริปต์หลัก ]
+            -- [ 🔑 รันสคริปต์หลัก Achitsak ]
             script_key = "dcqwGHfLTHFGcHTZPhrgzZVIPLxMVVMf"
             loadstring(game:HttpGet('https://api.luarmor.net/files/v3/loaders/50cc49ea3e0a5a40cd1fb5545dc938b6.lua'))()
             warn("💎 [Stealth] สคริปต์หลักทำงานแล้ว!")
