@@ -13,7 +13,6 @@ end
 
 local AntiAFKActive = false
 local Player = game.Players.LocalPlayer
-local FileName = "Status_" .. Player.Name .. ".txt"
 local IsLoading = true 
 
 -- [ 💤 ระบบกันหลุด Anti-AFK ]
@@ -83,8 +82,17 @@ end)
 
 -- [ 2. 🛡️ ระบบจัดการไอดี และการแช่บนพื้น ]
 task.spawn(function()
+    -- [[ 🛑 จุดแก้: รอให้ Name โหลดเสร็จก่อน 5 วินาที เพื่อกัน Error :16 ]]
+    warn("⏳ [Stealth] รอโหลดข้อมูลผู้เล่น (5s Check)...")
+    while not (Player and Player.Parent and Player.Name ~= "") do
+        task.wait(5) 
+    end
+    
+    local FileName = "Status_" .. Player.Name .. ".txt"
+    warn("✅ [Stealth] ข้อมูลพร้อม: " .. Player.Name)
+
     local char = Player.Character or Player.CharacterAdded:Wait()
-    local root = char:WaitForChild("HumanoidRootPart", 40)
+    local root = char:WaitForChild("HumanoidRootPart", 60) -- เพิ่มเวลาเผื่อ Rejoin ช้า
     
     if root then
         local isReady = false
@@ -113,7 +121,7 @@ task.spawn(function()
             task.wait(2)
             game:Shutdown() -- ปิดเกม
         else
-            -- [[ รอบที่ 2: ฟาร์มจริง (เปลี่ยนเป็นรอ 5 นาทีคงที่) ]]
+            -- [[ รอบที่ 2: ฟาร์มจริง (รอ 5 นาทีคงที่) ]]
             warn("🚀 [Stealth] Ready: กำลังรอ 5 นาทีก่อนเริ่มฟาร์ม...")
             StartTemporaryAntiAFK() 
             task.wait(300) -- รอ 5 นาที (300 วินาที)
