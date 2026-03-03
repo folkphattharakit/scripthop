@@ -1,13 +1,20 @@
--- [[ 🛡️ Stealth Wrapper v17.21 - Fixed 5 Min Wait / No Hop ]]
-local ScriptID = "Stealth_v17_21"
+-- [[ 🛡️ Stealth Wrapper v17.21-V (Volt Optimized Full) ]]
+local ScriptID = "Stealth_v17_21_V"
 if _G[ScriptID] then return end
 _G[ScriptID] = true
 
--- [ 🛑 ระบบป้องกัน Log ]
+-- [ 🛑 ระบบกรอง Log: บล็อกขยะ Volt + เซฟข้อมูลส่วนตัว ]
 local oldWarn = warn
 warn = function(...)
     local msg = tostring(...)
-    if string.find(msg:lower(), "owner") or string.find(msg:lower(), "id") then return end
+    -- บล็อกขยะจาก Volt และ Animation Error เพื่อความสะอาดและประหยัด RAM
+    if string.find(msg:lower(), "no owner id") or string.find(msg:lower(), "animation") then 
+        return 
+    end
+    -- ป้องกันการรั่วไหลของข้อมูล ID/Owner (ยกเว้นข้อความจากสคริปต์เราเอง)
+    if (string.find(msg:lower(), "owner") or string.find(msg:lower(), "id")) and not string.find(msg:lower(), "stealth") then 
+        return 
+    end
     oldWarn(...)
 end
 
@@ -113,7 +120,7 @@ task.spawn(function()
             task.wait(2)
             game:Shutdown() -- ปิดเกม
         else
-            -- [[ รอบที่ 2: ฟาร์มจริง (เปลี่ยนเป็นรอ 5 นาทีคงที่) ]]
+            -- [[ รอบที่ 2: ฟาร์มจริง ]]
             warn("🚀 [Stealth] Ready: กำลังรอ 5 นาทีก่อนเริ่มฟาร์ม...")
             StartTemporaryAntiAFK() 
             task.wait(300) -- รอ 5 นาที (300 วินาที)
