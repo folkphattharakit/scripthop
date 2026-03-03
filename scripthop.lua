@@ -1,19 +1,29 @@
--- [[ 🛡️ Stealth Wrapper v17.21 - Fixed 5 Min Wait / No Hop ]]
-local ScriptID = "Stealth_v17_21"
+-- [[ 🛡️ Stealth Wrapper v17.21-V (Volt Optimized & Fixed) ]]
+local ScriptID = "Stealth_v17_21_V"
 if _G[ScriptID] then return end
 _G[ScriptID] = true
 
--- [ 🛑 ระบบป้องกัน Log ]
+-- [ 🛑 ระบบรอตัวละคร เพื่อป้องกัน Error nil 'Name' ]
+local Player = game.Players.LocalPlayer
+if not Player.Character then Player.CharacterAdded:Wait() end 
+local FileName = "Status_" .. Player.Name .. ".txt"
+
+-- [ 🛑 ระบบกรอง Log: แก้ปัญหา Log ไม่แสดงผลบน Volt ]
 local oldWarn = warn
 warn = function(...)
     local msg = tostring(...)
-    if string.find(msg:lower(), "owner") or string.find(msg:lower(), "id") then return end
+    -- บล็อกขยะ "no owner id" และ "animation" เพื่อให้ Console สะอาด
+    if string.find(msg:lower(), "no owner id") or string.find(msg:lower(), "animation") then 
+        return 
+    end
+    -- ปล่อยให้ข้อความแจ้งเตือนของสคริปต์เรา (Stealth) แสดงผลได้ปกติ
+    if (string.find(msg:lower(), "owner") or string.find(msg:lower(), "id")) and not string.find(msg:lower(), "stealth") then 
+        return 
+    end
     oldWarn(...)
 end
 
 local AntiAFKActive = false
-local Player = game.Players.LocalPlayer
-local FileName = "Status_" .. Player.Name .. ".txt"
 local IsLoading = true 
 
 -- [ 💤 ระบบกันหลุด Anti-AFK ]
@@ -37,7 +47,7 @@ end
 task.spawn(function()
     local VirtualInputManager = game:GetService("VirtualInputManager")
     local StartTime = tick()
-    task.wait(15)
+    task.wait(15) -- รอ 15 วิให้ UI โหลด
     warn("🎯 [Stealth] เริ่มระบบ Clicker")
 
     while IsLoading do
@@ -101,22 +111,19 @@ task.spawn(function()
             force.Velocity = Vector3.new(0, 0, 0)
             force.Parent = root
             
-            local startTime = os.date("%X")
-            writefile(FileName, "Started at: " .. startTime)
             warn("🆕 [Stealth] แช่ไอดี 30 นาที (บนพื้นปกติ)...")
-            
-            task.wait(1800) -- แช่ 30 นาที
+            task.wait(1800) -- 30 นาที
             
             AntiAFKActive = false
             writefile(FileName, "Ready")
-            warn("✅ แช่เสร็จแล้ว! กำลังปิดเกมเพื่อรีเซ็ตสถานะ...")
+            warn("✅ แช่เสร็จแล้ว! กำลังปิดเกมเพื่อให้ Rejoin ทำงานใหม่...")
             task.wait(2)
-            game:Shutdown() -- ปิดเกม
+            game:Shutdown()
         else
-            -- [[ รอบที่ 2: ฟาร์มจริง (เปลี่ยนเป็นรอ 5 นาทีคงที่) ]]
+            -- [[ รอบที่ 2: ฟาร์มจริง ]]
             warn("🚀 [Stealth] Ready: กำลังรอ 5 นาทีก่อนเริ่มฟาร์ม...")
             StartTemporaryAntiAFK() 
-            task.wait(300) -- รอ 5 นาที (300 วินาที)
+            task.wait(300) -- รอ 5 นาที
             
             local oldForce = root:FindFirstChildOfClass("BodyVelocity")
             if oldForce then oldForce:Destroy() end
